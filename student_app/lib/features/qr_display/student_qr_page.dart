@@ -19,7 +19,7 @@ class _StudentQrPageState extends State<StudentQrPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       setState(() => _now = DateTime.now());
     });
   }
@@ -33,9 +33,8 @@ class _StudentQrPageState extends State<StudentQrPage> {
   String _formatTime(DateTime dt) {
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     final m = dt.minute.toString().padLeft(2, '0');
-    final s = dt.second.toString().padLeft(2, '0');
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-    return '$h:$m:$s $ampm';
+    return '$h:$m $ampm';
   }
 
   String _formatDate(DateTime dt) {

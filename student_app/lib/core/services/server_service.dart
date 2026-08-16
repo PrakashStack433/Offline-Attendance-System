@@ -24,6 +24,7 @@ class ServerService {
 
   Future<bool> markAttendance({
     required String classId,
+    required String className,
     required String studentId,
     required String name,
     required String enrollmentNo,
@@ -38,6 +39,7 @@ class ServerService {
               'studentId': studentId,
               'name': name,
               'enrollmentNo': enrollmentNo,
+              'className': className,
             }),
           )
           .timeout(const Duration(seconds: 10));

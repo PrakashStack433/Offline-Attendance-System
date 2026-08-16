@@ -98,6 +98,22 @@ app.post('/api/class/:classId/attendance', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Auto-create class if it doesn't exist (teacher may have created it locally)
+    const classCheck = await pool.query('SELECT id FROM classes WHERE id = $1', [classId]);
+    if (classCheck.rows.length === 0) {
+      const className = req.body.className || 'Unknown Class';
+      await pool.query('INSERT INTO classes (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [classId, className]);
+    }
+
+    // Auto-create student if it doesn't exist
+    const studentCheck = await pool.query('SELECT id FROM students WHERE id = $1', [studentId]);
+    if (studentCheck.rows.length === 0) {
+      await pool.query(
+        'INSERT INTO students (id, class_id, name, enrollment_no) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+        [studentId, classId, name, enrollmentNo]
+      );
+    }
+
     // Check if already marked today
     const today = new Date().toISOString().split('T')[0];
     const existing = await pool.query(

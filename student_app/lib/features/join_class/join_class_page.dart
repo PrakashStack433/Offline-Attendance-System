@@ -116,6 +116,7 @@ class _JoinClassPageState extends State<JoinClassPage> {
 
       final marked = await serverService.markAttendance(
         classId: classId,
+        className: className,
         studentId: profile.id,
         name: profile.name,
         enrollmentNo: profile.enrollmentNo,

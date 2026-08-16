@@ -240,7 +240,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         );
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted && !widget.isNew) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
