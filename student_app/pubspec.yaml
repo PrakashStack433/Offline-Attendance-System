@@ -1,0 +1,44 @@
+name: student_attendance
+description: Student attendance app with dynamic QR codes
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Database
+  drift: ^2.24.0
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
+
+  # QR Code
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.0
+
+  # State Management
+  provider: ^6.1.0
+
+  # Networking
+  http: ^1.2.0
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # Utils
+  uuid: ^4.5.0
+  intl: ^0.20.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  drift_dev: ^2.24.0
+  build_runner: ^2.4.0
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
