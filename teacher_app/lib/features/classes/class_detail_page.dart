@@ -34,6 +34,10 @@ class ClassDetailPage extends StatelessWidget {
           body: cls == null
               ? const Center(child: Text('Class not found'))
               : _ClassDetailBody(classId: classId, className: cls.name),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => context.push('/class/$classId/student/new'),
+            child: const Icon(Icons.person_add),
+          ),
         );
       },
     );

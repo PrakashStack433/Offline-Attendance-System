@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../core/database/app_database.dart';
 import '../../core/utils/id_generator.dart';
@@ -156,7 +157,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
         );
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
