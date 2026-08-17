@@ -67,37 +67,31 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                   itemCount: records.length,
                   itemBuilder: (context, index) {
                     final record = records[index];
-                    return FutureBuilder<Student?>(
-                      future: db.studentDao.getStudentById(record.studentId),
-                      builder: (context, studentSnap) {
-                        final student = studentSnap.data;
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 2),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: record.status == 'present'
-                                  ? Colors.green.shade100
-                                  : Colors.red.shade100,
-                              child: Icon(
-                                record.status == 'present'
-                                    ? Icons.check
-                                    : Icons.close,
-                                color: record.status == 'present'
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                            title: Text(student?.name ?? 'Unknown'),
-                            subtitle: Text(
-                              'Roll: ${student?.rollNumber ?? '-'} | ${record.status}',
-                            ),
-                            trailing: Text(
-                              formatTime(record.createdAt),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 2),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: record.status == 'present'
+                              ? Colors.green.shade100
+                              : Colors.red.shade100,
+                          child: Icon(
+                            record.status == 'present'
+                                ? Icons.check
+                                : Icons.close,
+                            color: record.status == 'present'
+                                ? Colors.green
+                                : Colors.red,
                           ),
-                        );
-                      },
+                        ),
+                        title: Text(record.studentName),
+                        subtitle: Text(
+                          'Roll: ${record.enrollmentNo} | ${record.status}',
+                        ),
+                        trailing: Text(
+                          formatTime(record.createdAt),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
                     );
                   },
                 );

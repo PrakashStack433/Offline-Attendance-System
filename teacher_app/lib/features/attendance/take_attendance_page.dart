@@ -18,9 +18,10 @@ class TakeAttendancePage extends StatefulWidget {
 class _TakeAttendancePageState extends State<TakeAttendancePage> {
   MobileScannerController? _scannerController;
   bool _isProcessing = false;
+  bool _scannerStopped = false;
   String _status = 'Point camera at student QR code';
   int _markedCount = 0;
-  List<String> _markedStudents = [];
+  List<String> _markedEnrollments = [];
 
   @override
   void initState() {
@@ -42,7 +43,7 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
     if (mounted) {
       setState(() {
         _markedCount = records.length;
-        _markedStudents = records.map((r) => r.studentId).toList();
+        _markedEnrollments = records.map((r) => r.enrollmentNo).toList();
       });
     }
   }
@@ -51,6 +52,15 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
   void dispose() {
     _scannerController?.dispose();
     super.dispose();
+  }
+
+  Map<String, String>? _parseOfflineQr(String qrData) {
+    final parts = qrData.split('|');
+    if (parts.length < 4 || parts[0] != 'OFFLINE') return null;
+    final name = parts[1].trim();
+    final enrollmentNo = parts[2].trim();
+    if (name.isEmpty || enrollmentNo.isEmpty) return null;
+    return {'name': name, 'enrollmentNo': enrollmentNo};
   }
 
   @override
@@ -100,21 +110,57 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
           ),
           Expanded(
             flex: 3,
-            child: MobileScanner(
-              controller: _scannerController!,
-              onDetect: _onDetect,
-            ),
+            child: _scannerStopped
+                ? Container(
+                    color: Colors.black,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.qr_code_scanner, color: Colors.white54, size: 64),
+                          const SizedBox(height: 16),
+                          Text(
+                            _status,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton.icon(
+                            onPressed: _resumeScanning,
+                            icon: const Icon(Icons.play_arrow),
+                            label: const Text('Scan Next Student'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : MobileScanner(
+                    controller: _scannerController!,
+                    onDetect: _onDetect,
+                  ),
           ),
           Expanded(
             flex: 2,
             child: _MarkedList(
               classId: widget.classId,
-              markedStudentIds: _markedStudents,
+              markedEnrollments: _markedEnrollments,
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _resumeScanning() {
+    setState(() {
+      _scannerStopped = false;
+      _status = 'Point camera at student QR code';
+    });
+    _scannerController?.start();
   }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
@@ -130,10 +176,9 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
     });
 
     try {
-      final db = context.read<AppDatabase>();
-      final student = await db.studentDao.getStudentByQrData(qrData);
+      final parsed = _parseOfflineQr(qrData);
 
-      if (student == null) {
+      if (parsed == null) {
         setState(() {
           _status = 'Unknown QR code. Try again.';
         });
@@ -141,23 +186,28 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
         return;
       }
 
-      if (_markedStudents.contains(student.id)) {
+      final name = parsed['name']!;
+      final enrollmentNo = parsed['enrollmentNo']!;
+
+      if (_markedEnrollments.contains(enrollmentNo)) {
         setState(() {
-          _status = '${student.name} already marked today.';
+          _status = '$name already marked today.';
         });
         _showFeedback(false, 'Already marked');
         return;
       }
 
+      final db = context.read<AppDatabase>();
       final today = DateTime.now();
       final alreadyMarked = await db.attendanceDao.hasAlreadyMarked(
-        student.id,
+        enrollmentNo,
+        widget.classId,
         today,
       );
 
       if (alreadyMarked) {
         setState(() {
-          _status = '${student.name} already marked today.';
+          _status = '$name already marked today.';
         });
         _showFeedback(false, 'Already marked');
         return;
@@ -167,8 +217,9 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
       await db.attendanceDao.markAttendance(
         AttendanceCompanion(
           id: drift.Value(id),
-          studentId: drift.Value(student.id),
           classId: drift.Value(widget.classId),
+          studentName: drift.Value(name),
+          enrollmentNo: drift.Value(enrollmentNo),
           date: drift.Value(today),
           status: const drift.Value('present'),
           createdAt: drift.Value(today),
@@ -177,10 +228,13 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
 
       setState(() {
         _markedCount++;
-        _markedStudents.add(student.id);
-        _status = '✓ ${student.name} marked present';
+        _markedEnrollments.add(enrollmentNo);
+        _status = '✓ $name marked present';
       });
-      _showFeedback(true, student.name);
+      _showFeedback(true, name);
+
+      _scannerController?.stop();
+      setState(() => _scannerStopped = true);
     } catch (e) {
       setState(() {
         _status = 'Error: $e';
@@ -203,11 +257,11 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
 
 class _MarkedList extends StatelessWidget {
   final String classId;
-  final List<String> markedStudentIds;
+  final List<String> markedEnrollments;
 
   const _MarkedList({
     required this.classId,
-    required this.markedStudentIds,
+    required this.markedEnrollments,
   });
 
   @override
@@ -224,20 +278,20 @@ class _MarkedList extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(8),
             child: Text(
-              'Marked Today (${markedStudentIds.length})',
+              'Marked Today (${markedEnrollments.length})',
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<Student>>(
-              stream: db.studentDao.watchStudentsByClass(classId),
+            child: StreamBuilder<List<AttendanceData>>(
+              stream: db.attendanceDao.watchAttendanceByClassAndDate(
+                classId,
+                DateTime.now(),
+              ),
               builder: (context, snapshot) {
-                final students = snapshot.data ?? [];
-                final marked = students
-                    .where((s) => markedStudentIds.contains(s.id))
-                    .toList();
+                final records = snapshot.data ?? [];
 
-                if (marked.isEmpty) {
+                if (records.isEmpty) {
                   return const Center(
                     child: Text(
                       'No attendance marked yet',
@@ -248,12 +302,12 @@ class _MarkedList extends StatelessWidget {
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  itemCount: marked.length,
+                  itemCount: records.length,
                   itemBuilder: (context, index) {
-                    final s = marked[index];
+                    final r = records[index];
                     return Chip(
                       avatar: const Icon(Icons.check_circle, color: Colors.green, size: 18),
-                      label: Text('${s.rollNumber} - ${s.name}'),
+                      label: Text('${r.enrollmentNo} - ${r.studentName}'),
                     );
                   },
                 );

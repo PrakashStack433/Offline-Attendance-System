@@ -32,6 +32,15 @@ class StudentDao extends DatabaseAccessor<AppDatabase> with _$StudentDaoMixin {
         .getSingleOrNull();
   }
 
+  Future<Student?> getStudentByRollNumber(String rollNumber, String classId) {
+    return (select(students)
+          ..where((t) =>
+              t.rollNumber.equals(rollNumber) &
+              t.classId.equals(classId) &
+              t.isDeleted.equals(false)))
+        .getSingleOrNull();
+  }
+
   Future<void> insertStudent(StudentsCompanion entry) {
     return into(students).insert(entry);
   }

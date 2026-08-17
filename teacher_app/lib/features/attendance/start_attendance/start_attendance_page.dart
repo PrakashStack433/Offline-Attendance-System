@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../../core/database/app_database.dart';
 import '../../../core/services/cloud_service.dart';
 
 class StartAttendancePage extends StatefulWidget {
@@ -54,8 +55,56 @@ class _StartAttendancePageState extends State<StartAttendancePage> {
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       if (!mounted) return;
       final records = await _cloud.getAttendance(widget.classId);
-      if (mounted) setState(() => _onlineCount = records.length);
+      if (mounted) {
+        setState(() => _onlineCount = records.length);
+        await _syncRecordsToLocalDb(records);
+      }
     });
+  }
+
+  Future<void> _syncRecordsToLocalDb(List<Map<String, dynamic>> records) async {
+    final db = context.read<AppDatabase>();
+    for (final record in records) {
+      final studentId = record['student_id'] as String?;
+      final name = record['name'] as String? ?? 'Unknown';
+      final enrollmentNo = record['enrollment_no'] as String? ?? '';
+
+      final dateStr = record['date'] as String?;
+      final timeStr = record['time'] as String?;
+      if (dateStr == null) continue;
+
+      final dateParts = dateStr.split('-');
+      final date = DateTime(
+        int.parse(dateParts[0]),
+        int.parse(dateParts[1]),
+        int.parse(dateParts[2]),
+      );
+
+      DateTime createdAt = date;
+      if (timeStr != null) {
+        final timeParts = timeStr.split(':');
+        createdAt = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          int.parse(timeParts[0]),
+          int.parse(timeParts[1]),
+          timeParts.length > 2 ? int.parse(timeParts[2]) : 0,
+        );
+      }
+
+      final recordId = record['id'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString();
+      await db.attendanceDao.upsertAttendance(
+        id: recordId,
+        studentId: studentId,
+        classId: widget.classId,
+        studentName: name,
+        enrollmentNo: enrollmentNo,
+        date: date,
+        status: 'present',
+        createdAt: createdAt,
+      );
+    }
   }
 
   String get _qrData {

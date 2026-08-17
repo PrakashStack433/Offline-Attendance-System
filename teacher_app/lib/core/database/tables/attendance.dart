@@ -4,8 +4,10 @@ import 'students.dart';
 
 class Attendance extends Table {
   TextColumn get id => text()();
-  TextColumn get studentId => text().references(Students, #id)();
+  TextColumn get studentId => text().nullable().references(Students, #id)();
   TextColumn get classId => text().references(Classes, #id)();
+  TextColumn get studentName => text().withLength(min: 1, max: 100)();
+  TextColumn get enrollmentNo => text().withLength(min: 1, max: 20)();
   DateTimeColumn get date => dateTime()();
   TextColumn get status => text().withLength(min: 1, max: 20)();
   DateTimeColumn get createdAt => dateTime()();

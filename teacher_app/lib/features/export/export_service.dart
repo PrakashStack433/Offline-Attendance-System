@@ -23,7 +23,6 @@ class ExportService {
   }
 
   Future<void> exportCsv(String classId, String className) async {
-    final students = await _db.studentDao.getStudentsByClass(classId);
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));
     final records = await _db.attendanceDao.getAttendanceByDateRange(
@@ -36,10 +35,9 @@ class ExportService {
     rows.add(['Roll Number', 'Student Name', 'Date', 'Status', 'Time']);
 
     for (final record in records) {
-      final student = students.where((s) => s.id == record.studentId).firstOrNull;
       rows.add([
-        student?.rollNumber ?? '-',
-        student?.name ?? 'Unknown',
+        record.enrollmentNo,
+        record.studentName,
         formatDate(record.date),
         record.status,
         formatTime(record.createdAt),
@@ -59,7 +57,6 @@ class ExportService {
   }
 
   Future<void> exportPdf(String classId, String className) async {
-    final students = await _db.studentDao.getStudentsByClass(classId);
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));
     final records = await _db.attendanceDao.getAttendanceByDateRange(
@@ -95,10 +92,9 @@ class ExportService {
           pw.TableHelper.fromTextArray(
             headers: ['Roll', 'Name', 'Date', 'Status', 'Time'],
             data: records.map((r) {
-              final s = students.where((st) => st.id == r.studentId).firstOrNull;
               return [
-                s?.rollNumber ?? '-',
-                s?.name ?? 'Unknown',
+                r.enrollmentNo,
+                r.studentName,
                 formatDate(r.date),
                 r.status,
                 formatTime(r.createdAt),
@@ -124,7 +120,6 @@ class ExportService {
   }
 
   Future<void> exportTxt(String classId, String className) async {
-    final students = await _db.studentDao.getStudentsByClass(classId);
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));
     final records = await _db.attendanceDao.getAttendanceByDateRange(
@@ -145,10 +140,9 @@ class ExportService {
     buffer.writeln('${'-' * 8}${'-' * 25}${'-' * 14}${'-' * 12}${'-' * 8}');
 
     for (final record in records) {
-      final student = students.where((s) => s.id == record.studentId).firstOrNull;
       buffer.writeln(
-        '${(student?.rollNumber ?? '-').padRight(8)}'
-        '${(student?.name ?? 'Unknown').padRight(25)}'
+        '${record.enrollmentNo.padRight(8)}'
+        '${record.studentName.padRight(25)}'
         '${formatDate(record.date).padRight(14)}'
         '${record.status.padRight(12)}'
         '${formatTime(record.createdAt)}',
