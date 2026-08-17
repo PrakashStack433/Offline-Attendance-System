@@ -20,6 +20,9 @@ dependencies:
   mobile_scanner: ^7.4.0
   qr_flutter: ^4.1.0
 
+  # Permissions
+  permission_handler: ^11.4.0
+
   # Navigation
   go_router: ^14.0.0
 

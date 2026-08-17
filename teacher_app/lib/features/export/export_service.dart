@@ -22,7 +22,14 @@ class ExportService {
     return exportDir.path;
   }
 
-  Future<void> exportCsv(String classId, String className) async {
+  Future<String> _getDownloadsDir() async {
+    final dir = await getExternalStorageDirectory();
+    if (dir != null) return dir.path;
+    final docDir = await getApplicationDocumentsDirectory();
+    return docDir.path;
+  }
+
+  Future<String> _generateCsv(String classId, String className) async {
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));
     final records = await _db.attendanceDao.getAttendanceByDateRange(
@@ -44,19 +51,10 @@ class ExportService {
       ]);
     }
 
-    final csvData = const ListToCsvConverter().convert(rows);
-    final dirPath = await _getExportDir();
-    final fileName = '${className}_attendance_${formatDate(DateTime.now())}.csv';
-    final file = File('$dirPath/$fileName');
-    await file.writeAsString(csvData);
-
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: 'Attendance Report - $className',
-    );
+    return const ListToCsvConverter().convert(rows);
   }
 
-  Future<void> exportPdf(String classId, String className) async {
+  Future<String> _generatePdfBytes(String classId, String className) async {
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));
     final records = await _db.attendanceDao.getAttendanceByDateRange(
@@ -108,18 +106,10 @@ class ExportService {
       ),
     );
 
-    final dirPath = await _getExportDir();
-    final fileName = '${className}_attendance_${formatDate(DateTime.now())}.pdf';
-    final file = File('$dirPath/$fileName');
-    await file.writeAsBytes(await pdf.save());
-
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: 'Attendance Report - $className',
-    );
+    return await pdf.save();
   }
 
-  Future<void> exportTxt(String classId, String className) async {
+  Future<String> _generateTxt(String classId, String className) async {
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));
     final records = await _db.attendanceDao.getAttendanceByDateRange(
@@ -153,10 +143,74 @@ class ExportService {
     buffer.writeln('Total Records: ${records.length}');
     buffer.writeln('========================================');
 
+    return buffer.toString();
+  }
+
+  Future<File> _saveToFile(String dirPath, String fileName, String content) async {
+    final file = File('$dirPath/$fileName');
+    await file.writeAsString(content);
+    return file;
+  }
+
+  Future<File> _saveBytesToFile(String dirPath, String fileName, List<int> bytes) async {
+    final file = File('$dirPath/$fileName');
+    await file.writeAsBytes(bytes);
+    return file;
+  }
+
+  Future<String> saveCsvToDevice(String classId, String className) async {
+    final csvData = await _generateCsv(classId, className);
+    final downloadsDir = await _getDownloadsDir();
+    final fileName = '${className}_attendance_${formatDate(DateTime.now())}.csv';
+    final file = await _saveToFile(downloadsDir, fileName, csvData);
+    return file.path;
+  }
+
+  Future<String> savePdfToDevice(String classId, String className) async {
+    final pdfBytes = await _generatePdfBytes(classId, className);
+    final downloadsDir = await _getDownloadsDir();
+    final fileName = '${className}_attendance_${formatDate(DateTime.now())}.pdf';
+    final file = await _saveBytesToFile(downloadsDir, fileName, pdfBytes);
+    return file.path;
+  }
+
+  Future<String> saveTxtToDevice(String classId, String className) async {
+    final txtData = await _generateTxt(classId, className);
+    final downloadsDir = await _getDownloadsDir();
+    final fileName = '${className}_attendance_${formatDate(DateTime.now())}.txt';
+    final file = await _saveToFile(downloadsDir, fileName, txtData);
+    return file.path;
+  }
+
+  Future<void> shareCsv(String classId, String className) async {
+    final csvData = await _generateCsv(classId, className);
+    final dirPath = await _getExportDir();
+    final fileName = '${className}_attendance_${formatDate(DateTime.now())}.csv';
+    final file = await _saveToFile(dirPath, fileName, csvData);
+
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Attendance Report - $className',
+    );
+  }
+
+  Future<void> sharePdf(String classId, String className) async {
+    final pdfBytes = await _generatePdfBytes(classId, className);
+    final dirPath = await _getExportDir();
+    final fileName = '${className}_attendance_${formatDate(DateTime.now())}.pdf';
+    final file = await _saveBytesToFile(dirPath, fileName, pdfBytes);
+
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Attendance Report - $className',
+    );
+  }
+
+  Future<void> shareTxt(String classId, String className) async {
+    final txtData = await _generateTxt(classId, className);
     final dirPath = await _getExportDir();
     final fileName = '${className}_attendance_${formatDate(DateTime.now())}.txt';
-    final file = File('$dirPath/$fileName');
-    await file.writeAsString(buffer.toString());
+    final file = await _saveToFile(dirPath, fileName, txtData);
 
     await Share.shareXFiles(
       [XFile(file.path)],

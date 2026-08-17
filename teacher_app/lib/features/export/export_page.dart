@@ -61,47 +61,28 @@ class ExportPage extends StatelessWidget {
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _ExportButton(
-                                  label: 'CSV',
-                                  icon: Icons.table_chart,
-                                  color: Colors.green,
-                                  onPressed: () => _export(
-                                    context,
-                                    cls,
-                                    ExportFormat.csv,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _ExportButton(
-                                  label: 'PDF',
-                                  icon: Icons.picture_as_pdf,
-                                  color: Colors.red,
-                                  onPressed: () => _export(
-                                    context,
-                                    cls,
-                                    ExportFormat.pdf,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _ExportButton(
-                                  label: 'TXT',
-                                  icon: Icons.text_snippet,
-                                  color: Colors.blue,
-                                  onPressed: () => _export(
-                                    context,
-                                    cls,
-                                    ExportFormat.txt,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          _ExportRow(
+                            label: 'CSV',
+                            icon: Icons.table_chart,
+                            color: Colors.green,
+                            onShare: () => _share(context, cls, ExportFormat.csv),
+                            onDownload: () => _download(context, cls, ExportFormat.csv),
+                          ),
+                          const SizedBox(height: 8),
+                          _ExportRow(
+                            label: 'PDF',
+                            icon: Icons.picture_as_pdf,
+                            color: Colors.red,
+                            onShare: () => _share(context, cls, ExportFormat.pdf),
+                            onDownload: () => _download(context, cls, ExportFormat.pdf),
+                          ),
+                          const SizedBox(height: 8),
+                          _ExportRow(
+                            label: 'TXT',
+                            icon: Icons.text_snippet,
+                            color: Colors.blue,
+                            onShare: () => _share(context, cls, ExportFormat.txt),
+                            onDownload: () => _download(context, cls, ExportFormat.txt),
                           ),
                         ],
                       ),
@@ -116,27 +97,63 @@ class ExportPage extends StatelessWidget {
     );
   }
 
-  Future<void> _export(BuildContext context, ClassesData cls, ExportFormat format) async {
+  Future<void> _share(BuildContext context, ClassesData cls, ExportFormat format) async {
     final db = context.read<AppDatabase>();
     final service = ExportService(db);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Generating export...')),
+      const SnackBar(content: Text('Preparing to share...')),
     );
 
     try {
       switch (format) {
         case ExportFormat.csv:
-          await service.exportCsv(cls.id, cls.name);
+          await service.shareCsv(cls.id, cls.name);
         case ExportFormat.pdf:
-          await service.exportPdf(cls.id, cls.name);
+          await service.sharePdf(cls.id, cls.name);
         case ExportFormat.txt:
-          await service.exportTxt(cls.id, cls.name);
+          await service.shareTxt(cls.id, cls.name);
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e')),
+          SnackBar(content: Text('Share failed: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _download(BuildContext context, ClassesData cls, ExportFormat format) async {
+    final db = context.read<AppDatabase>();
+    final service = ExportService(db);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Saving to device...')),
+    );
+
+    try {
+      String path;
+      switch (format) {
+        case ExportFormat.csv:
+          path = await service.saveCsvToDevice(cls.id, cls.name);
+        case ExportFormat.pdf:
+          path = await service.savePdfToDevice(cls.id, cls.name);
+        case ExportFormat.txt:
+          path = await service.saveTxtToDevice(cls.id, cls.name);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved to: $path'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
         );
       }
     }
@@ -145,28 +162,40 @@ class ExportPage extends StatelessWidget {
 
 enum ExportFormat { csv, pdf, txt }
 
-class _ExportButton extends StatelessWidget {
+class _ExportRow extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final VoidCallback onPressed;
+  final VoidCallback onShare;
+  final VoidCallback onDownload;
 
-  const _ExportButton({
+  const _ExportRow({
     required this.label,
     required this.icon,
     required this.color,
-    required this.onPressed,
+    required this.onShare,
+    required this.onDownload,
   });
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, color: color, size: 18),
-      label: Text(label, style: TextStyle(color: color)),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 8),
+        Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
+        const Spacer(),
+        IconButton(
+          onPressed: onDownload,
+          icon: Icon(Icons.download, color: color, size: 20),
+          tooltip: 'Save to device',
+        ),
+        IconButton(
+          onPressed: onShare,
+          icon: Icon(Icons.share, color: color, size: 20),
+          tooltip: 'Share',
+        ),
+      ],
     );
   }
 }

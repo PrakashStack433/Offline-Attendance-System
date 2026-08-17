@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
+import '../../core/utils/date_utils.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class ClassDetailPage extends StatelessWidget {
@@ -34,10 +35,6 @@ class ClassDetailPage extends StatelessWidget {
           body: cls == null
               ? const Center(child: Text('Class not found'))
               : _ClassDetailBody(classId: classId, className: cls.name),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => context.push('/class/$classId/student/new'),
-            child: const Icon(Icons.person_add),
-          ),
         );
       },
     );
@@ -101,7 +98,7 @@ class _ClassDetailBody extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                'Students',
+                "Today's Attendance",
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const Spacer(),
@@ -114,52 +111,43 @@ class _ClassDetailBody extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: StreamBuilder<List<Student>>(
-            stream: db.studentDao.watchStudentsByClass(classId),
+          child: StreamBuilder<List<AttendanceData>>(
+            stream: db.attendanceDao.watchAttendanceByClassAndDate(
+              classId,
+              DateTime.now(),
+            ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              final students = snapshot.data ?? [];
+              final records = snapshot.data ?? [];
 
-              if (students.isEmpty) {
+              if (records.isEmpty) {
                 return const EmptyState(
-                  icon: Icons.person_add_outlined,
-                  title: 'No Students',
-                  subtitle: 'Tap + to add students',
+                  icon: Icons.event_available,
+                  title: 'No Attendance Yet',
+                  subtitle: 'Tap Offline or Online to start',
                 );
               }
 
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: students.length,
+                itemCount: records.length,
                 itemBuilder: (context, index) {
-                  final student = students[index];
+                  final record = records[index];
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
                     child: ListTile(
                       leading: CircleAvatar(
-                        child: Text(student.rollNumber),
+                        backgroundColor: Colors.green.shade100,
+                        child: const Icon(Icons.check, color: Colors.green, size: 20),
                       ),
-                      title: Text(student.name),
-                      subtitle: Text('Roll: ${student.rollNumber}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.qr_code, size: 20),
-                            tooltip: 'Show QR',
-                            onPressed: () => _showQR(context, student),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit, size: 20),
-                            tooltip: 'Edit',
-                            onPressed: () => context.push(
-                              '/class/$classId/student/${student.id}/edit',
-                            ),
-                          ),
-                        ],
+                      title: Text(record.studentName),
+                      subtitle: Text('Roll: ${record.enrollmentNo}'),
+                      trailing: Text(
+                        formatTime(record.createdAt),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                   );
@@ -169,43 +157,6 @@ class _ClassDetailBody extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  void _showQR(BuildContext context, Student student) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(student.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Roll: ${student.rollNumber}'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Image.network(
-                'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${Uri.encodeComponent(student.qrCodeData)}',
-                width: 200,
-                height: 200,
-                errorBuilder: (_, __, ___) => const Icon(Icons.qr_code, size: 200),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text('Show this QR to student'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
     );
   }
 }

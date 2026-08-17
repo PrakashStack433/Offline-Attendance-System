@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:drift/drift.dart' as drift;
 import 'dart:async';
 import '../../core/database/app_database.dart';
+import '../../core/services/permission_service.dart';
 import '../../core/utils/id_generator.dart';
 
 class TakeAttendancePage extends StatefulWidget {
@@ -30,7 +31,15 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
       detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
     );
+    _checkCameraPermission();
     _loadMarkedCount();
+  }
+
+  Future<void> _checkCameraPermission() async {
+    final hasPermission = await PermissionService.requestCameraPermission();
+    if (!hasPermission && mounted) {
+      PermissionService.showPermissionDeniedDialog(context);
+    }
   }
 
   Future<void> _loadMarkedCount() async {
