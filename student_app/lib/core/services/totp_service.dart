@@ -22,10 +22,6 @@ class TotpService {
     return false;
   }
 
-  static String _generateCode(int counter) {
-    return _generateHmac(counter);
-  }
-
   static String _generateHmac(int counter) {
     final counterBytes = _intToBytes(counter);
     final secretBytes = utf8.encode(_secret);

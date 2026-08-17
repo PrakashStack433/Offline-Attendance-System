@@ -24,8 +24,6 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
   String _status = 'Point camera at student QR code';
   int _markedCount = 0;
   List<String> _markedEnrollments = [];
-  String _currentTotp = TotpService.generateCode();
-  late Timer _totpTimer;
 
   @override
   void initState() {
@@ -36,9 +34,6 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
     );
     _checkCameraPermission();
     _loadMarkedCount();
-    _totpTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _currentTotp = TotpService.generateCode());
-    });
   }
 
   Future<void> _checkCameraPermission() async {
@@ -65,7 +60,6 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
 
   @override
   void dispose() {
-    _totpTimer.cancel();
     _scannerController?.dispose();
     super.dispose();
   }
@@ -158,27 +152,6 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                 : MobileScanner(
                     controller: _scannerController!,
                     onDetect: _onDetect,
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            color: Colors.blue.shade50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock, size: 14, color: Colors.blue.shade700),
-                const SizedBox(width: 6),
-                Text(
-                  'Security Code: $_currentTotp',
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
             ),
           ),
           Expanded(

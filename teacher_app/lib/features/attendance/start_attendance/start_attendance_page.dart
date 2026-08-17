@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/services/cloud_service.dart';
+import '../../../core/services/totp_service.dart';
 
 class StartAttendancePage extends StatefulWidget {
   final String classId;
@@ -24,6 +25,7 @@ class _StartAttendancePageState extends State<StartAttendancePage> {
   bool _isConnected = false;
   int _onlineCount = 0;
   Timer? _refreshTimer;
+  Timer? _qrTimer;
   final _urlController = TextEditingController();
 
   @override
@@ -32,11 +34,15 @@ class _StartAttendancePageState extends State<StartAttendancePage> {
     _cloud = context.read<CloudService>();
     _urlController.text = _cloud.baseUrl;
     _checkConnection();
+    _qrTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _qrTimer?.cancel();
     _urlController.dispose();
     super.dispose();
   }
@@ -109,7 +115,8 @@ class _StartAttendancePageState extends State<StartAttendancePage> {
 
   String get _qrData {
     final url = _cloud.baseUrl;
-    return 'ONLINE|$url|${widget.classId}|${widget.className}';
+    final totp = TotpService.generateCode();
+    return 'ONLINE|$url|${widget.classId}|${widget.className}|$totp';
   }
 
   @override

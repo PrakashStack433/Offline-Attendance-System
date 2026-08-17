@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../core/database/student_database.dart';
 import '../../core/services/server_service.dart';
+import '../../core/services/totp_service.dart';
 
 class JoinClassPage extends StatefulWidget {
   const JoinClassPage({super.key});
@@ -79,7 +80,7 @@ class _JoinClassPageState extends State<JoinClassPage> {
 
     try {
       final parts = qrData.split('|');
-      if (parts.length < 4 || parts[0] != 'ONLINE') {
+      if (parts.length < 5 || parts[0] != 'ONLINE') {
         setState(() {
           _status = 'Invalid QR code. Expected teacher attendance QR.';
           _isProcessing = false;
@@ -90,6 +91,15 @@ class _JoinClassPageState extends State<JoinClassPage> {
       final serverUrl = parts[1];
       final classId = parts[2];
       final className = parts[3];
+      final totpCode = parts[4].trim();
+
+      if (!TotpService.verifyCode(totpCode)) {
+        setState(() {
+          _status = 'Invalid security code. QR may be expired.';
+          _isProcessing = false;
+        });
+        return;
+      }
 
       final db = context.read<StudentDatabase>();
       final profile = await db.getProfile();
