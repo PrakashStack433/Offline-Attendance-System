@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/database/student_database.dart';
+import '../../core/services/totp_service.dart';
 import '../../core/utils/id_generator.dart';
 
 class StudentQrPage extends StatefulWidget {
@@ -15,12 +16,20 @@ class StudentQrPage extends StatefulWidget {
 class _StudentQrPageState extends State<StudentQrPage> {
   late Timer _timer;
   DateTime _now = DateTime.now();
+  String _totpCode = TotpService.generateCode();
+  int _secondsLeft = TotpService.secondsUntilRefresh;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      setState(() => _now = DateTime.now());
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {
+        _now = DateTime.now();
+        _secondsLeft = TotpService.secondsUntilRefresh;
+        if (_secondsLeft == 20) {
+          _totpCode = TotpService.generateCode();
+        }
+      });
     });
   }
 
@@ -124,7 +133,64 @@ class _StudentQrPageState extends State<StudentQrPage> {
                       backgroundColor: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.lock, size: 16, color: Colors.blue.shade700),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Security: $_totpCode',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.blue.shade700,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: CircularProgressIndicator(
+                            value: _secondsLeft / 20,
+                            strokeWidth: 4,
+                            backgroundColor: Colors.grey.shade200,
+                            color: _secondsLeft <= 5 ? Colors.red : Colors.blue,
+                          ),
+                        ),
+                        Text(
+                          '$_secondsLeft',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: _secondsLeft <= 5 ? Colors.red : Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Refreshes in ${_secondsLeft}s',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(

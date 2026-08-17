@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' as drift;
 import 'dart:async';
 import '../../core/database/app_database.dart';
 import '../../core/services/permission_service.dart';
+import '../../core/services/totp_service.dart';
 import '../../core/utils/id_generator.dart';
 
 class TakeAttendancePage extends StatefulWidget {
@@ -23,6 +24,8 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
   String _status = 'Point camera at student QR code';
   int _markedCount = 0;
   List<String> _markedEnrollments = [];
+  String _currentTotp = TotpService.generateCode();
+  late Timer _totpTimer;
 
   @override
   void initState() {
@@ -33,6 +36,9 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
     );
     _checkCameraPermission();
     _loadMarkedCount();
+    _totpTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() => _currentTotp = TotpService.generateCode());
+    });
   }
 
   Future<void> _checkCameraPermission() async {
@@ -59,17 +65,19 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
 
   @override
   void dispose() {
+    _totpTimer.cancel();
     _scannerController?.dispose();
     super.dispose();
   }
 
   Map<String, String>? _parseOfflineQr(String qrData) {
     final parts = qrData.split('|');
-    if (parts.length < 4 || parts[0] != 'OFFLINE') return null;
+    if (parts.length < 6 || parts[0] != 'OFFLINE') return null;
     final name = parts[1].trim();
     final enrollmentNo = parts[2].trim();
-    if (name.isEmpty || enrollmentNo.isEmpty) return null;
-    return {'name': name, 'enrollmentNo': enrollmentNo};
+    final totpCode = parts[5].trim();
+    if (name.isEmpty || enrollmentNo.isEmpty || totpCode.isEmpty) return null;
+    return {'name': name, 'enrollmentNo': enrollmentNo, 'totpCode': totpCode};
   }
 
   @override
@@ -150,7 +158,28 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
                 : MobileScanner(
                     controller: _scannerController!,
                     onDetect: _onDetect,
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            color: Colors.blue.shade50,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock, size: 14, color: Colors.blue.shade700),
+                const SizedBox(width: 6),
+                Text(
+                  'Security Code: $_currentTotp',
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    letterSpacing: 2,
                   ),
+                ),
+              ],
+            ),
           ),
           Expanded(
             flex: 2,
@@ -197,6 +226,15 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
 
       final name = parsed['name']!;
       final enrollmentNo = parsed['enrollmentNo']!;
+      final totpCode = parsed['totpCode']!;
+
+      if (!TotpService.verifyCode(totpCode)) {
+        setState(() {
+          _status = 'Invalid security code. QR may be expired.';
+        });
+        _showFeedback(false, 'Invalid QR');
+        return;
+      }
 
       if (_markedEnrollments.contains(enrollmentNo)) {
         setState(() {

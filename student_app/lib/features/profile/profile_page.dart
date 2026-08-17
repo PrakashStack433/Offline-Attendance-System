@@ -7,6 +7,14 @@ import '../../core/utils/id_generator.dart';
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  bool _wasEditedToday(DateTime? updatedAt) {
+    if (updatedAt == null) return false;
+    final now = DateTime.now();
+    return updatedAt.year == now.year &&
+        updatedAt.month == now.month &&
+        updatedAt.day == now.day;
+  }
+
   @override
   Widget build(BuildContext context) {
     final db = context.read<StudentDatabase>();
@@ -24,6 +32,8 @@ class ProfilePage extends StatelessWidget {
           if (profile == null) {
             return const _ProfileForm(isNew: true);
           }
+
+          final editedToday = _wasEditedToday(profile.updatedAt);
 
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -51,17 +61,27 @@ class ProfilePage extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => _ProfileForm(
-                          isNew: false,
-                          existingProfile: profile,
-                        ),
+                    onPressed: editedToday
+                        ? null
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => _ProfileForm(
+                                  isNew: false,
+                                  existingProfile: profile,
+                                ),
+                              ),
+                            ),
+                    icon: Icon(
+                      Icons.edit,
+                      color: editedToday ? Colors.grey : null,
+                    ),
+                    label: Text(
+                      editedToday ? 'Can edit once a day' : 'Edit Profile',
+                      style: TextStyle(
+                        color: editedToday ? Colors.grey : null,
                       ),
                     ),
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Edit Profile'),
                   ),
                 ),
               ],

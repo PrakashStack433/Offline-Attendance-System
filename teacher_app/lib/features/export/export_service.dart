@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:csv/csv.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -54,7 +55,7 @@ class ExportService {
     return const ListToCsvConverter().convert(rows);
   }
 
-  Future<String> _generatePdfBytes(String classId, String className) async {
+  Future<Uint8List> _generatePdfBytes(String classId, String className) async {
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));
     final records = await _db.attendanceDao.getAttendanceByDateRange(
