@@ -34,7 +34,7 @@ class _StartAttendancePageState extends State<StartAttendancePage> {
     _cloud = context.read<CloudService>();
     _urlController.text = _cloud.baseUrl;
     _checkConnection();
-    _qrTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+    _qrTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       setState(() {});
     });
   }

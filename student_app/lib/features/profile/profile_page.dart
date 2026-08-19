@@ -53,6 +53,8 @@ class ProfilePage extends StatelessWidget {
                             value: profile.enrollmentNo),
                         const SizedBox(height: 12),
                         _InfoRow(label: 'Class', value: profile.className),
+                        const SizedBox(height: 12),
+                        _InfoRow(label: 'Section', value: profile.section),
                       ],
                     ),
                   ),
@@ -128,6 +130,7 @@ class _ProfileFormState extends State<_ProfileForm> {
   final _nameController = TextEditingController();
   final _enrollmentController = TextEditingController();
   final _classController = TextEditingController();
+  final _sectionController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -137,6 +140,7 @@ class _ProfileFormState extends State<_ProfileForm> {
       _nameController.text = widget.existingProfile!.name;
       _enrollmentController.text = widget.existingProfile!.enrollmentNo;
       _classController.text = widget.existingProfile!.className;
+      _sectionController.text = widget.existingProfile!.section;
     }
   }
 
@@ -145,6 +149,7 @@ class _ProfileFormState extends State<_ProfileForm> {
     _nameController.dispose();
     _enrollmentController.dispose();
     _classController.dispose();
+    _sectionController.dispose();
     super.dispose();
   }
 
@@ -199,14 +204,27 @@ class _ProfileFormState extends State<_ProfileForm> {
               TextFormField(
                 controller: _classController,
                 decoration: const InputDecoration(
-                  labelText: 'Class / Section',
-                  hintText: 'e.g. Mathematics A',
+                  labelText: 'Class',
+                  hintText: 'e.g. Mathematics',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.class_),
                 ),
                 textCapitalization: TextCapitalization.words,
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Enter class name' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _sectionController,
+                decoration: const InputDecoration(
+                  labelText: 'Section',
+                  hintText: 'e.g. A',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.group),
+                ),
+                textCapitalization: TextCapitalization.words,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Enter section' : null,
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
@@ -244,6 +262,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             name: drift.Value(_nameController.text.trim()),
             enrollmentNo: drift.Value(_enrollmentController.text.trim()),
             className: drift.Value(_classController.text.trim()),
+            section: drift.Value(_sectionController.text.trim()),
             createdAt: drift.Value(now),
             updatedAt: drift.Value(now),
           ),
@@ -255,6 +274,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             name: drift.Value(_nameController.text.trim()),
             enrollmentNo: drift.Value(_enrollmentController.text.trim()),
             className: drift.Value(_classController.text.trim()),
+            section: drift.Value(_sectionController.text.trim()),
             updatedAt: drift.Value(now),
           ),
         );

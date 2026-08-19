@@ -61,6 +61,22 @@ class $StudentProfileTable extends StudentProfile
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sectionMeta = const VerificationMeta(
+    'section',
+  );
+  @override
+  late final GeneratedColumn<String> section = GeneratedColumn<String>(
+    'section',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 50,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _teacherServerUrlMeta = const VerificationMeta(
     'teacherServerUrl',
   );
@@ -100,6 +116,7 @@ class $StudentProfileTable extends StudentProfile
     name,
     enrollmentNo,
     className,
+    section,
     teacherServerUrl,
     createdAt,
     updatedAt,
@@ -147,6 +164,12 @@ class $StudentProfileTable extends StudentProfile
       );
     } else if (isInserting) {
       context.missing(_classNameMeta);
+    }
+    if (data.containsKey('section')) {
+      context.handle(
+        _sectionMeta,
+        section.isAcceptableOrUnknown(data['section']!, _sectionMeta),
+      );
     }
     if (data.containsKey('teacher_server_url')) {
       context.handle(
@@ -202,6 +225,11 @@ class $StudentProfileTable extends StudentProfile
             DriftSqlType.string,
             data['${effectivePrefix}class_name'],
           )!,
+      section:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}section'],
+          )!,
       teacherServerUrl: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}teacher_server_url'],
@@ -231,6 +259,7 @@ class StudentProfileData extends DataClass
   final String name;
   final String enrollmentNo;
   final String className;
+  final String section;
   final String? teacherServerUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -239,6 +268,7 @@ class StudentProfileData extends DataClass
     required this.name,
     required this.enrollmentNo,
     required this.className,
+    required this.section,
     this.teacherServerUrl,
     required this.createdAt,
     required this.updatedAt,
@@ -250,6 +280,7 @@ class StudentProfileData extends DataClass
     map['name'] = Variable<String>(name);
     map['enrollment_no'] = Variable<String>(enrollmentNo);
     map['class_name'] = Variable<String>(className);
+    map['section'] = Variable<String>(section);
     if (!nullToAbsent || teacherServerUrl != null) {
       map['teacher_server_url'] = Variable<String>(teacherServerUrl);
     }
@@ -264,6 +295,7 @@ class StudentProfileData extends DataClass
       name: Value(name),
       enrollmentNo: Value(enrollmentNo),
       className: Value(className),
+      section: Value(section),
       teacherServerUrl:
           teacherServerUrl == null && nullToAbsent
               ? const Value.absent()
@@ -283,6 +315,7 @@ class StudentProfileData extends DataClass
       name: serializer.fromJson<String>(json['name']),
       enrollmentNo: serializer.fromJson<String>(json['enrollmentNo']),
       className: serializer.fromJson<String>(json['className']),
+      section: serializer.fromJson<String>(json['section']),
       teacherServerUrl: serializer.fromJson<String?>(json['teacherServerUrl']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -296,6 +329,7 @@ class StudentProfileData extends DataClass
       'name': serializer.toJson<String>(name),
       'enrollmentNo': serializer.toJson<String>(enrollmentNo),
       'className': serializer.toJson<String>(className),
+      'section': serializer.toJson<String>(section),
       'teacherServerUrl': serializer.toJson<String?>(teacherServerUrl),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -307,6 +341,7 @@ class StudentProfileData extends DataClass
     String? name,
     String? enrollmentNo,
     String? className,
+    String? section,
     Value<String?> teacherServerUrl = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -315,6 +350,7 @@ class StudentProfileData extends DataClass
     name: name ?? this.name,
     enrollmentNo: enrollmentNo ?? this.enrollmentNo,
     className: className ?? this.className,
+    section: section ?? this.section,
     teacherServerUrl:
         teacherServerUrl.present
             ? teacherServerUrl.value
@@ -331,6 +367,7 @@ class StudentProfileData extends DataClass
               ? data.enrollmentNo.value
               : this.enrollmentNo,
       className: data.className.present ? data.className.value : this.className,
+      section: data.section.present ? data.section.value : this.section,
       teacherServerUrl:
           data.teacherServerUrl.present
               ? data.teacherServerUrl.value
@@ -347,6 +384,7 @@ class StudentProfileData extends DataClass
           ..write('name: $name, ')
           ..write('enrollmentNo: $enrollmentNo, ')
           ..write('className: $className, ')
+          ..write('section: $section, ')
           ..write('teacherServerUrl: $teacherServerUrl, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -360,6 +398,7 @@ class StudentProfileData extends DataClass
     name,
     enrollmentNo,
     className,
+    section,
     teacherServerUrl,
     createdAt,
     updatedAt,
@@ -372,6 +411,7 @@ class StudentProfileData extends DataClass
           other.name == this.name &&
           other.enrollmentNo == this.enrollmentNo &&
           other.className == this.className &&
+          other.section == this.section &&
           other.teacherServerUrl == this.teacherServerUrl &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -382,6 +422,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
   final Value<String> name;
   final Value<String> enrollmentNo;
   final Value<String> className;
+  final Value<String> section;
   final Value<String?> teacherServerUrl;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -391,6 +432,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
     this.name = const Value.absent(),
     this.enrollmentNo = const Value.absent(),
     this.className = const Value.absent(),
+    this.section = const Value.absent(),
     this.teacherServerUrl = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -401,6 +443,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
     required String name,
     required String enrollmentNo,
     required String className,
+    this.section = const Value.absent(),
     this.teacherServerUrl = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -416,6 +459,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
     Expression<String>? name,
     Expression<String>? enrollmentNo,
     Expression<String>? className,
+    Expression<String>? section,
     Expression<String>? teacherServerUrl,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -426,6 +470,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
       if (name != null) 'name': name,
       if (enrollmentNo != null) 'enrollment_no': enrollmentNo,
       if (className != null) 'class_name': className,
+      if (section != null) 'section': section,
       if (teacherServerUrl != null) 'teacher_server_url': teacherServerUrl,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -438,6 +483,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
     Value<String>? name,
     Value<String>? enrollmentNo,
     Value<String>? className,
+    Value<String>? section,
     Value<String?>? teacherServerUrl,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -448,6 +494,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
       name: name ?? this.name,
       enrollmentNo: enrollmentNo ?? this.enrollmentNo,
       className: className ?? this.className,
+      section: section ?? this.section,
       teacherServerUrl: teacherServerUrl ?? this.teacherServerUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -469,6 +516,9 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
     }
     if (className.present) {
       map['class_name'] = Variable<String>(className.value);
+    }
+    if (section.present) {
+      map['section'] = Variable<String>(section.value);
     }
     if (teacherServerUrl.present) {
       map['teacher_server_url'] = Variable<String>(teacherServerUrl.value);
@@ -492,6 +542,7 @@ class StudentProfileCompanion extends UpdateCompanion<StudentProfileData> {
           ..write('name: $name, ')
           ..write('enrollmentNo: $enrollmentNo, ')
           ..write('className: $className, ')
+          ..write('section: $section, ')
           ..write('teacherServerUrl: $teacherServerUrl, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -518,6 +569,7 @@ typedef $$StudentProfileTableCreateCompanionBuilder =
       required String name,
       required String enrollmentNo,
       required String className,
+      Value<String> section,
       Value<String?> teacherServerUrl,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -529,6 +581,7 @@ typedef $$StudentProfileTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> enrollmentNo,
       Value<String> className,
+      Value<String> section,
       Value<String?> teacherServerUrl,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -561,6 +614,11 @@ class $$StudentProfileTableFilterComposer
 
   ColumnFilters<String> get className => $composableBuilder(
     column: $table.className,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get section => $composableBuilder(
+    column: $table.section,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -609,6 +667,11 @@ class $$StudentProfileTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get section => $composableBuilder(
+    column: $table.section,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get teacherServerUrl => $composableBuilder(
     column: $table.teacherServerUrl,
     builder: (column) => ColumnOrderings(column),
@@ -647,6 +710,9 @@ class $$StudentProfileTableAnnotationComposer
 
   GeneratedColumn<String> get className =>
       $composableBuilder(column: $table.className, builder: (column) => column);
+
+  GeneratedColumn<String> get section =>
+      $composableBuilder(column: $table.section, builder: (column) => column);
 
   GeneratedColumn<String> get teacherServerUrl => $composableBuilder(
     column: $table.teacherServerUrl,
@@ -705,6 +771,7 @@ class $$StudentProfileTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> enrollmentNo = const Value.absent(),
                 Value<String> className = const Value.absent(),
+                Value<String> section = const Value.absent(),
                 Value<String?> teacherServerUrl = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -714,6 +781,7 @@ class $$StudentProfileTableTableManager
                 name: name,
                 enrollmentNo: enrollmentNo,
                 className: className,
+                section: section,
                 teacherServerUrl: teacherServerUrl,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -725,6 +793,7 @@ class $$StudentProfileTableTableManager
                 required String name,
                 required String enrollmentNo,
                 required String className,
+                Value<String> section = const Value.absent(),
                 Value<String?> teacherServerUrl = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -734,6 +803,7 @@ class $$StudentProfileTableTableManager
                 name: name,
                 enrollmentNo: enrollmentNo,
                 className: className,
+                section: section,
                 teacherServerUrl: teacherServerUrl,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

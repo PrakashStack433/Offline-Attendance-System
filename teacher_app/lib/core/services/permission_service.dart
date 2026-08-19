@@ -15,15 +15,23 @@ class PermissionService {
     return result.isGranted;
   }
 
-  static Future<void> showPermissionDeniedDialog(BuildContext context) {
+  static Future<bool> requestStoragePermission() async {
+    if (await Permission.manageExternalStorage.isGranted) {
+      return true;
+    }
+
+    final result = await Permission.manageExternalStorage.request();
+    return result.isGranted;
+  }
+
+  static Future<void> showPermissionDeniedDialog(BuildContext context, {String? title, String? message}) {
     return showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.camera_alt, size: 48, color: Colors.orange),
-        title: const Text('Camera Permission Required'),
-        content: const Text(
-          'Camera permission is needed to scan student QR codes. '
-          'Please enable it in app settings.',
+        icon: const Icon(Icons.warning, size: 48, color: Colors.orange),
+        title: Text(title ?? 'Permission Required'),
+        content: Text(
+          message ?? 'Permission is needed to save files. Please enable it in app settings.',
         ),
         actions: [
           TextButton(

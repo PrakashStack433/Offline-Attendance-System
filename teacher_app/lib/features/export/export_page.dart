@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/database/app_database.dart';
+import '../../core/services/permission_service.dart';
 import 'export_service.dart';
 
 class ExportPage extends StatelessWidget {
@@ -124,11 +125,23 @@ class ExportPage extends StatelessWidget {
   }
 
   Future<void> _download(BuildContext context, ClassesData cls, ExportFormat format) async {
+    final hasPermission = await PermissionService.requestStoragePermission();
+    if (!hasPermission) {
+      if (context.mounted) {
+        await PermissionService.showPermissionDeniedDialog(
+          context,
+          title: 'Storage Permission Required',
+          message: 'Storage permission is needed to save files to Downloads folder. Please enable it in app settings.',
+        );
+      }
+      return;
+    }
+
     final db = context.read<AppDatabase>();
     final service = ExportService(db);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Saving to device...')),
+      const SnackBar(content: Text('Saving to Downloads folder...')),
     );
 
     try {
@@ -145,7 +158,7 @@ class ExportPage extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Saved to: $path'),
+            content: Text('Saved to Downloads: $path'),
             duration: const Duration(seconds: 3),
           ),
         );

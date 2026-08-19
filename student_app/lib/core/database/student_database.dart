@@ -13,13 +13,18 @@ class StudentDatabase extends _$StudentDatabase {
   StudentDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (m) async {
         await m.createAll();
+      },
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          await m.addColumn(studentProfile, studentProfile.section);
+        }
       },
     );
   }

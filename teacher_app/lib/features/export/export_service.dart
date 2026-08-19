@@ -24,7 +24,7 @@ class ExportService {
   }
 
   Future<String> _getDownloadsDir() async {
-    final dir = await getExternalStorageDirectory();
+    final dir = await getDownloadsDirectory();
     if (dir != null) return dir.path;
     final docDir = await getApplicationDocumentsDirectory();
     return docDir.path;

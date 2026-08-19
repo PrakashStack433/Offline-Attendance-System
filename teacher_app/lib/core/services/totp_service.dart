@@ -4,7 +4,7 @@ import 'package:crypto/crypto.dart';
 
 class TotpService {
   static const String _secret = 'OFFLINE_ATTENDANCE_TOTP_SECRET_2024';
-  static const int _timeStep = 20;
+  static const int _timeStep = 10;
   static const int _digits = 6;
 
   static String generateCode() {

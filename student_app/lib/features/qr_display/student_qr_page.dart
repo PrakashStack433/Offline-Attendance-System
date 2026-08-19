@@ -19,7 +19,7 @@ class _StudentQrPageState extends State<StudentQrPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 20), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) {
       setState(() => _now = DateTime.now());
     });
   }

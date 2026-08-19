@@ -5,6 +5,7 @@ class StudentProfile extends Table {
   TextColumn get name => text().withLength(min: 1, max: 100)();
   TextColumn get enrollmentNo => text().withLength(min: 1, max: 20)();
   TextColumn get className => text().withLength(min: 1, max: 100)();
+  TextColumn get section => text().withLength(min: 1, max: 50).withDefault(const Constant(''))();
   TextColumn get teacherServerUrl => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
