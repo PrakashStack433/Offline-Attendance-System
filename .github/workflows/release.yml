@@ -1,0 +1,43 @@
+name: Release APKs
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies (student_app)
+        working-directory: student_app
+        run: flutter pub get
+
+      - name: Build student_app APK
+        working-directory: student_app
+        run: flutter build apk --release
+
+      - name: Install dependencies (teacher_app)
+        working-directory: teacher_app
+        run: flutter pub get
+
+      - name: Build teacher_app APK
+        working-directory: teacher_app
+        run: flutter build apk --release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            student_app/build/app/outputs/flutter-apk/app-release.apk
+            teacher_app/build/app/outputs/flutter-apk/app-release.apk
+          generate_release_notes: true
