@@ -47,3 +47,7 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+base {
+    archivesName = "Teacher_Attendance"
+}
